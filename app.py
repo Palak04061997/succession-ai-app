@@ -6,6 +6,9 @@ import os, urllib.parse, requests
 from dotenv import load_dotenv
 import openai
 
+# ✅ MUST be the first Streamlit command
+st.set_page_config(page_title="Succession AI - Business Assistant", layout="wide")
+
 # Load environment variables
 load_dotenv()
 
@@ -13,8 +16,15 @@ load_dotenv()
 @st.cache_resource
 def init_connection():
     try:
-        username = urllib.parse.quote_plus(os.getenv("MONGODB_USERNAME"))
-        password = urllib.parse.quote_plus(os.getenv("MONGODB_PASSWORD"))
+        raw_user = os.getenv("MONGODB_USERNAME")
+        raw_pass = os.getenv("MONGODB_PASSWORD")
+
+        if not raw_user or not raw_pass:
+            st.error("❌ MongoDB username or password not found. Check your Streamlit secrets.")
+            return None
+
+        username = urllib.parse.quote_plus(raw_user)
+        password = urllib.parse.quote_plus(raw_pass)
         uri = f"mongodb+srv://{username}:{password}@cluster0.mongodb.net/?retryWrites=true&w=majority"
         client = MongoClient(uri)
         client.admin.command("ping")
@@ -26,8 +36,10 @@ def init_connection():
 client = init_connection()
 collection = client["succession_ai"]["business_data"] if client else None
 
-# Page config
-st.set_page_config(page_title="Succession AI - Business Assistant", layout="wide")
+# OpenAI config
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+# App title
 st.title("💼 Succession AI – Business Assistant")
 
 # Form input
